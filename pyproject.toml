@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "analytics-agent"
+version = "0.1.0"
+description = "An agentic AI system for analyzing BigQuery data"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "analytics_agent"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langgraph = "^0.2.0"
+langchain = "^0.3.0"
+langchain-google-genai = "^2.0.0"
+google-cloud-bigquery = "^3.25.0"
+python-dotenv = "^1.0.0"
+dependency-injector = "^4.42.0"
+matplotlib = "^3.8.0"
+pandas = "^2.2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+black = "^24.8.0"
+ruff = "^0.6.0"
+mypy = "^1.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
