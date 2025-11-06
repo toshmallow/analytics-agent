@@ -34,10 +34,11 @@ The agent is built using:
 - 🛡️ **Rate Limit Handling**: Automatically retries with exponential backoff
 - 💰 **Cost Optimization**: Uses Gemini's free-tier quota (15 RPM per key)
 - 🔧 **Dependency Injection**: Clean, testable architecture
-- 🌐 **Web Interface**: Modern chat-based UI with streaming responses
+- 🌐 **Web Interface**: Modern chat-based UI with streaming responses and markdown formatting
 - 📊 **Data Visualization**: Create bar, line, scatter, and pie charts
 - 📁 **File Export**: Save query results and visualizations to disk
 - 💬 **Conversational Memory**: Maintains context across multiple questions
+- 📝 **Rich Text Formatting**: Full markdown support with syntax-highlighted code blocks
 
 ## Project Structure
 
@@ -154,6 +155,7 @@ make run
 ```
 
 **CLI Features:**
+
 - Interactive question-answer loop
 - Real-time tool execution feedback
 - Conversation history (use `reset` to clear)
@@ -176,12 +178,14 @@ make run-web
 Then open your browser and navigate to `http://localhost:8080`
 
 **Web Features:**
+
 - 💬 Modern chat interface with streaming responses
-- 🎨 Beautiful UI with syntax highlighting
+- 🎨 Beautiful UI with full markdown support and syntax highlighting
 - 📊 Inline visualization rendering
 - 💾 Automatic conversation persistence per session
 - 🔄 Real-time tool execution updates
 - 📱 Responsive design
+- 📝 Supports rich formatting: headings, lists, tables, code blocks, links, bold/italic text
 
 ### Query BigQuery Public Datasets
 
@@ -214,6 +218,7 @@ The agent can create visualizations when explicitly requested:
 ```
 
 **Supported chart types:**
+
 - **Bar charts**: For comparisons
 - **Line charts**: For trends over time
 - **Scatter plots**: For relationships between variables
@@ -232,9 +237,39 @@ The agent can export query results to files:
 ```
 
 **Supported export formats:**
+
 - CSV (comma-separated values)
 - JSON (structured data)
 - TXT (plain text)
+
+### Markdown Formatting (Web Interface)
+
+The web interface supports full markdown formatting for rich, readable responses:
+
+**Supported markdown elements:**
+
+- **Headings**: `# H1` through `###### H6`
+- **Bold text**: `**bold**` or `__bold__`
+- **Italic text**: `*italic*` or `_italic_`
+- **Code blocks**: ` ```language\ncode\n``` ` with syntax highlighting
+- **Inline code**: `` `code` ``
+- **Links**: `[text](url)`
+- **Lists**: Ordered (`1. item`) and unordered (`- item`)
+- **Blockquotes**: `> quote`
+- **Tables**: Pipe-separated tables
+- **Horizontal rules**: `---`
+- **Images**: `![alt](url)`
+
+The agent's responses are automatically rendered with proper formatting, making them easier to read and understand. Code blocks include automatic syntax highlighting for popular languages like Python, SQL, JavaScript, and more.
+
+**The agent is specifically instructed to:**
+
+- Format all responses using markdown syntax
+- Structure responses with clear headings and sections
+- Use bold text to emphasize key findings
+- Present SQL queries in code blocks
+- Use tables for structured data comparisons
+- Keep paragraphs concise and well-organized
 
 ### Programmatic Usage
 
@@ -540,27 +575,35 @@ The modular structure makes it easy to add new capabilities:
 ### Common Issues
 
 **Configuration Error**
+
 ```
 Configuration error: GCP_PROJECT_ID environment variable is required
 ```
+
 Solution: Make sure your `.env` file contains all required variables.
 
 **Authentication Error**
+
 ```
 Error: Could not automatically determine credentials
 ```
+
 Solution: Run `gcloud auth application-default login` or set `GOOGLE_APPLICATION_CREDENTIALS`.
 
 **Rate Limit Error**
+
 ```
 Rate limit exceeded
 ```
+
 Solution: Add multiple API keys in your `.env` file (comma-separated).
 
 **Port Already in Use (Web Interface)**
+
 ```
 Address already in use
 ```
+
 Solution: Change the port by setting `PORT` in your `.env` file or kill the process using port 8080.
 
 ## License

@@ -51,6 +51,24 @@ def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledSta
             - Exporting data and files to the local file system
             - Interpreting results and providing insights
 
+            OUTPUT FORMATTING GUIDELINES:
+            - ALWAYS format your responses using MARKDOWN syntax for better readability
+            - Use proper markdown elements to organize your response:
+              * Use **bold** for emphasis on key findings and important numbers
+              * Use headings (## or ###) to structure different sections of your response
+              * Use bullet points (-) or numbered lists (1.) to present multiple items
+              * Use code blocks (```sql) for SQL queries
+              * Use inline code (`backticks`) for table names, column names, and technical terms
+              * Use tables (markdown tables) when presenting structured data comparisons
+            - Structure your responses in a clear, logical flow:
+              1. Brief summary/overview of what you found
+              2. Key findings with supporting data
+              3. Detailed analysis if needed
+              4. Actionable insights or recommendations
+            - Break up long responses into sections with headings
+            - Use horizontal rules (---) to separate major sections when appropriate
+            - Keep paragraphs short and focused (2-4 sentences max)
+
             IMPORTANT GUIDELINES:
             - ALWAYS start by briefly explaining your plan and what you're going to do
             - When calling tools, provide clear reasoning about why you're using each tool

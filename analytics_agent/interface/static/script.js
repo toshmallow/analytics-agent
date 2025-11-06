@@ -213,11 +213,45 @@ function addVisualization(container, url, filename) {
 }
 
 function formatMessage(text) {
-    // Simple formatting: preserve line breaks and format code blocks
-    return text
-        .replace(/\n/g, '<br>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/```([^`]+)```/g, '<pre>$1</pre>');
+    // Use marked.js to parse markdown
+    try {
+        // Configure marked options
+        marked.setOptions({
+            breaks: true,  // Convert \n to <br>
+            gfm: true,     // GitHub Flavored Markdown
+            headerIds: false,  // Disable header IDs
+            mangle: false,  // Don't escape email addresses
+            highlight: function(code, lang) {
+                // Syntax highlighting using highlight.js
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                        return hljs.highlight(code, { language: lang }).value;
+                    } catch (err) {
+                        console.error('Highlight error:', err);
+                    }
+                }
+                // Auto-detect language if not specified
+                try {
+                    return hljs.highlightAuto(code).value;
+                } catch (err) {
+                    console.error('Highlight auto error:', err);
+                }
+                return code;
+            }
+        });
+
+        // Parse markdown to HTML
+        const html = marked.parse(text);
+        return html;
+    } catch (error) {
+        console.error('Error parsing markdown:', error);
+        // Fallback to simple formatting
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+    }
 }
 
 function showTypingIndicator() {
