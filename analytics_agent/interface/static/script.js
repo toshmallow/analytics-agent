@@ -99,6 +99,9 @@ function sendMessage() {
                                 case 'tool_result':
                                     addToMessage(currentAssistantMessage, 'tool-result', data.content);
                                     break;
+                                case 'visualization':
+                                    addVisualization(currentAssistantMessage, data.url, data.filename);
+                                    break;
                                 case 'response':
                                     addToMessage(currentAssistantMessage, 'response', data.content);
                                     break;
@@ -189,6 +192,23 @@ function addToMessage(container, type, content) {
     }
 
     container.appendChild(element);
+    scrollToBottom();
+}
+
+function addVisualization(container, url, filename) {
+    if (!container) return;
+
+    const visualizationDiv = document.createElement('div');
+    visualizationDiv.className = 'visualization';
+
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = filename;
+    img.className = 'visualization-image';
+    img.loading = 'lazy';
+
+    visualizationDiv.appendChild(img);
+    container.appendChild(visualizationDiv);
     scrollToBottom();
 }
 

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, Response, jsonify, render_template, request, session, stream_with_context
+from flask import Flask, Response, jsonify, render_template, request, send_from_directory, session, stream_with_context
 
 from analytics_agent.agent.core import AnalyticsAgent
 from analytics_agent.container import container
@@ -61,6 +61,38 @@ def index() -> str:
         HTML page with chat interface
     """
     return render_template("index.html")
+
+
+@app.route("/api/visualizations/<path:filename>")
+def serve_visualization(filename: str) -> Response:
+    """Serve visualization images.
+
+    Args:
+        filename: Name of the visualization file (can include subdirectories)
+
+    Returns:
+        Image file response
+    """
+    # Get the exports directory (same as visualization tools use)
+    exports_dir = Path("exports").resolve()
+
+    # Normalize the filename path
+    file_path = Path(filename)
+
+    # Remove "exports" prefix if present in the path
+    if len(file_path.parts) > 0 and file_path.parts[0] == "exports":
+        file_path = Path(*file_path.parts[1:])
+
+    # Ensure the file is within exports directory for security
+    full_path = (exports_dir / file_path).resolve()
+    try:
+        full_path.relative_to(exports_dir)
+    except ValueError:
+        # Path is outside exports directory, return 404
+        return jsonify({"error": "File not found"}), 404
+
+    # Use send_from_directory with the base directory and relative path
+    return send_from_directory(str(exports_dir), str(file_path))
 
 
 def get_agent() -> AnalyticsAgent:
@@ -151,6 +183,45 @@ def chat() -> Response:
 
                                 if formatted_result:
                                     yield f"data: {json.dumps({'type': 'tool_result', 'content': formatted_result})}\n\n"
+
+                                # Check if this is a visualization result and extract image path
+                                if tool_name == "create_visualization" and "Saved to:" in result_content:
+                                    # Extract file path from result
+                                    try:
+                                        file_path = result_content.split("Saved to: ")[1].strip()
+                                        # Convert to relative path for web serving
+                                        path_obj = Path(file_path)
+
+                                        # Get the exports directory (same as visualization tools use)
+                                        exports_dir = Path("exports").resolve()
+
+                                        # Try to make path relative to exports directory
+                                        if path_obj.is_absolute():
+                                            try:
+                                                relative_path = path_obj.relative_to(exports_dir)
+                                                filename = str(relative_path).replace("\\", "/")  # Normalize path separators
+                                            except ValueError:
+                                                # If can't make relative, check if it's in a subdirectory
+                                                if "exports" in str(path_obj):
+                                                    # Extract the part after exports
+                                                    parts = str(path_obj).split("exports")
+                                                    if len(parts) > 1:
+                                                        filename = parts[1].lstrip("/\\").replace("\\", "/")
+                                                    else:
+                                                        filename = path_obj.name
+                                                else:
+                                                    filename = path_obj.name
+                                        else:
+                                            # Already relative, use as-is but normalize
+                                            filename = str(path_obj).replace("\\", "/")
+
+                                        # Send visualization image event
+                                        image_url = f"/api/visualizations/{filename}"
+                                        yield f"data: {json.dumps({'type': 'visualization', 'url': image_url, 'filename': filename})}\n\n"
+                                    except Exception as e:
+                                        # If parsing fails, log and continue
+                                        print(f"Error parsing visualization path: {e}")
+                                        pass
 
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
         except Exception as e:
