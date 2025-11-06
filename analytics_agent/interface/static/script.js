@@ -276,13 +276,9 @@ async function resetConversation() {
                 const welcomeDiv = document.createElement('div');
                 welcomeDiv.className = 'welcome-message';
                 welcomeDiv.innerHTML = `
-                    <p>👋 Welcome! I'm your Analytics Agent. I can help you:</p>
-                    <ul>
-                        <li>Query and analyze your BigQuery data</li>
-                        <li>Create visualizations</li>
-                        <li>Export data to files</li>
-                    </ul>
-                    <p>Start by asking a question about your data!</p>
+                    <p class="welcome-title">Welcome to Analytics Agent</p>
+                    <p class="welcome-text">I can help you query and analyze your BigQuery data, create visualizations, and export data to files.</p>
+                    <p class="welcome-text">Start by asking a question about your data.</p>
                 `;
                 chatContainer.appendChild(welcomeDiv);
             }
