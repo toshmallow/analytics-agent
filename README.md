@@ -253,7 +253,7 @@ questions = [
 
 for question in questions:
     print(f"\nQuestion: {question}")
-    
+
     # Stream responses
     for event in agent.analyze(question):
         for node_name, node_output in event.items():
