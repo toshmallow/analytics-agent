@@ -2,6 +2,7 @@
 
 from typing import Annotated, List
 
+import pandas as pd
 from langchain_core.tools import StructuredTool
 
 from analytics_agent.clients.bigquery import BigQueryClient
@@ -56,16 +57,26 @@ class BigQueryTools(BaseTool):
         output = "✅ Tool result:"
 
         if tool_name == "execute_bigquery_sql":
-            lines = result_content.split("\n")
-            row_count = len(lines)
-            if "[Note: Results truncated" in result_content:
-                truncated_msg = [
-                    line for line in lines if line.startswith("[Note: Results truncated")
-                ]
-                if truncated_msg:
-                    output += f"\n   {truncated_msg[0]}"
+            if result_content == "No results returned.":
+                output += "\n   Query returned 0 rows"
             else:
-                output += f"\n   Query returned {row_count} rows"
+                lines = result_content.split("\n")
+                # Subtract 1 for header row, and check for truncation note
+                if "[Note: Results truncated" in result_content:
+                    truncated_msg = [
+                        line for line in lines if line.startswith("[Note: Results truncated")
+                    ]
+                    if truncated_msg:
+                        output += f"\n   {truncated_msg[0]}"
+                    # Row count is lines - 1 (header) - 1 (truncation note)
+                    row_count = len([l for l in lines if l and not l.startswith("[Note:")])
+                    if row_count > 0:
+                        row_count -= 1  # Subtract header
+                else:
+                    # Row count is lines - 1 (header)
+                    row_count = max(0, len(lines) - 1)
+                    if row_count > 0:
+                        output += f"\n   Query returned {row_count} rows"
         elif tool_name == "list_bigquery_datasets":
             datasets = result_content.replace("Available datasets: ", "")
             dataset_list = [d.strip() for d in datasets.split(",") if d.strip()]
@@ -86,25 +97,40 @@ class BigQueryTools(BaseTool):
         return output
 
     def execute_bigquery_sql(self, query: Annotated[str, "SQL query to execute"]) -> str:
-        """Execute a SQL query against BigQuery and return the results.
+        """Execute a SQL query against BigQuery and return the results as CSV.
 
         Args:
             query: The SQL query to execute
 
         Returns:
-            String representation of query results
+            CSV formatted string of query results
         """
+        # Get full results to know total count
         results = self.client.execute_query(query)
-        result_str = str(results)
-        lines = result_str.split("\n")
-        max_lines_to_llm = 1000
-        if len(lines) > max_lines_to_llm:
-            return (
-                "\n".join(lines[:max_lines_to_llm])
-                + f"\n\n[Note: Results truncated to {max_lines_to_llm} rows. Total rows: {len(lines)}]"
-            )
 
-        return result_str
+        if not results:
+            return "No results returned."
+
+        # Convert to DataFrame
+        df_full = pd.DataFrame(results)
+        total_rows = len(df_full)
+
+        # Limit rows for LLM context
+        max_rows_to_llm = 1000
+        truncated = total_rows > max_rows_to_llm
+
+        if truncated:
+            df = df_full.head(max_rows_to_llm)
+        else:
+            df = df_full
+
+        # Convert to CSV string for LangChain
+        csv_str = df.to_csv(index=False)
+
+        if truncated:
+            csv_str += f"\n[Note: Results truncated to {max_rows_to_llm} rows. Total rows: {total_rows}]"
+
+        return csv_str
 
     def list_bigquery_datasets(self) -> str:
         """List all available BigQuery datasets in the project.
@@ -157,7 +183,11 @@ class BigQueryTools(BaseTool):
             StructuredTool.from_function(
                 func=self.execute_bigquery_sql,
                 name="execute_bigquery_sql",
-                description="Execute a SQL query against BigQuery and return the results",
+                description=(
+                    "Execute a SQL query against BigQuery and return the results as CSV format. "
+                    "Results are automatically truncated to 1000 rows if the query returns more rows. "
+                    "The CSV format includes column headers in the first row."
+                ),
             ),
             StructuredTool.from_function(
                 func=self.list_bigquery_datasets,

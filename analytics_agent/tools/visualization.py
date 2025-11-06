@@ -1,6 +1,6 @@
 """Tools for visualizing data from analytics queries."""
 
-import json
+import io
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, List, Literal, Optional
@@ -68,47 +68,33 @@ class VisualizationTools(BaseTool):
         return output
 
     def _parse_data(self, data: str) -> pd.DataFrame:
-        """Parse data string into a pandas DataFrame.
+        """Parse CSV data string into a pandas DataFrame.
 
         Args:
-            data: Data as JSON string or formatted table string
+            data: Data as CSV string with headers in the first row
 
         Returns:
             DataFrame containing the parsed data
+
+        Raises:
+            ValueError: If data cannot be parsed as CSV
         """
         try:
-            data_list = json.loads(data)
-            if isinstance(data_list, list) and len(data_list) > 0:
-                return pd.DataFrame(data_list)
-        except json.JSONDecodeError:
-            pass
-
-        lines = data.strip().split("\n")
-        if len(lines) < 2:
-            raise ValueError("Data must have at least header and one row")
-
-        rows = []
-        for line in lines:
-            parts = [p.strip() for p in line.split("|") if p.strip()]
-            if parts:
-                rows.append(parts)
-
-        if not rows:
-            raise ValueError("No valid data rows found")
-
-        df = pd.DataFrame(rows[1:], columns=rows[0])
-
-        for col in df.columns:
-            try:
-                df[col] = pd.to_numeric(df[col])
-            except (ValueError, TypeError):
-                pass
-
-        return df
+            df = pd.read_csv(io.StringIO(data))
+            if df.empty:
+                raise ValueError("CSV data is empty")
+            return df
+        except (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError) as e:
+            raise ValueError(
+                f"Data must be in CSV format with headers in the first row. Error: {str(e)}"
+            ) from e
 
     def create_visualization(
         self,
-        data: Annotated[str, "Data to visualize as JSON string or formatted table"],
+        data: Annotated[
+            str,
+            "Data to visualize as CSV string with headers in the first row",
+        ],
         chart_type: Annotated[
             Literal["bar", "line", "scatter", "pie"],
             "Type of chart to create (bar, line, scatter, or pie)",
@@ -125,7 +111,7 @@ class VisualizationTools(BaseTool):
         """Create a visualization from data and save to file system.
 
         Args:
-            data: Data to visualize as JSON string or formatted table
+            data: Data to visualize as CSV string with headers in the first row.
             chart_type: Type of chart (bar, line, scatter, or pie)
             x_column: Column name for x-axis
             y_column: Column name for y-axis (not needed for pie charts)
@@ -211,12 +197,11 @@ class VisualizationTools(BaseTool):
                 name="create_visualization",
                 description=(
                     "Create a visualization (bar, line, scatter, or pie chart) from data and "
-                    "save it to the file system. The data should be provided as a JSON string "
-                    "or formatted table. For bar and line charts, y_column is optional (will "
-                    "create a frequency chart if omitted). For pie charts, y_column can be "
-                    "values or omitted for frequency. For scatter plots, both x and y columns "
-                    "are required. By default, saves to the exports directory unless output_path "
-                    "is specified."
+                    "save it to the file system. The data must be provided as a CSV string "
+                    "with headers in the first row. For bar and line charts, y_column is optional "
+                    "(will create a frequency chart if omitted). For pie charts, y_column can be "
+                    "values or omitted for frequency. For scatter plots, both x and y columns are "
+                    "required. By default, saves to the exports directory unless output_path is specified."
                 ),
             ),
         ]
