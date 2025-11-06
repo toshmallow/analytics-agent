@@ -35,9 +35,6 @@ function sendMessage() {
     messageInput.value = '';
     messageInput.style.height = 'auto';
 
-    // Show typing indicator
-    showTypingIndicator();
-
     // Disable input
     isProcessing = true;
     sendButton.disabled = true;
@@ -45,6 +42,9 @@ function sendMessage() {
 
     // Create new assistant message container
     currentAssistantMessage = createAssistantMessageContainer();
+
+    // Show typing indicator inside the assistant message
+    showTypingIndicator();
 
     // Start streaming response using fetch
     fetch('/api/chat', {
@@ -191,7 +191,13 @@ function addToMessage(container, type, content) {
         element.textContent = content;
     }
 
-    container.appendChild(element);
+    // Insert before typing indicator if it exists, otherwise append
+    const typingIndicator = container.querySelector('.typing-indicator');
+    if (typingIndicator) {
+        container.insertBefore(element, typingIndicator);
+    } else {
+        container.appendChild(element);
+    }
     scrollToBottom();
 }
 
@@ -208,7 +214,14 @@ function addVisualization(container, url, filename) {
     img.loading = 'lazy';
 
     visualizationDiv.appendChild(img);
-    container.appendChild(visualizationDiv);
+
+    // Insert before typing indicator if it exists, otherwise append
+    const typingIndicator = container.querySelector('.typing-indicator');
+    if (typingIndicator) {
+        container.insertBefore(visualizationDiv, typingIndicator);
+    } else {
+        container.appendChild(visualizationDiv);
+    }
     scrollToBottom();
 }
 
@@ -255,25 +268,30 @@ function formatMessage(text) {
 }
 
 function showTypingIndicator() {
-    const indicator = document.createElement('div');
-    indicator.className = 'message assistant';
-    indicator.id = 'typing-indicator';
+    if (!currentAssistantMessage) return;
 
-    const content = document.createElement('div');
-    content.className = 'typing-indicator';
-    content.innerHTML = `
+    // Remove existing typing indicator if present
+    const existing = currentAssistantMessage.querySelector('.typing-indicator');
+    if (existing) {
+        existing.remove();
+    }
+
+    const indicator = document.createElement('div');
+    indicator.className = 'typing-indicator';
+    indicator.innerHTML = `
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
     `;
 
-    indicator.appendChild(content);
-    chatContainer.appendChild(indicator);
+    currentAssistantMessage.appendChild(indicator);
     scrollToBottom();
 }
 
 function hideTypingIndicator() {
-    const indicator = document.getElementById('typing-indicator');
+    if (!currentAssistantMessage) return;
+
+    const indicator = currentAssistantMessage.querySelector('.typing-indicator');
     if (indicator) {
         indicator.remove();
     }
