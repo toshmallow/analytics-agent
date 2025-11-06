@@ -16,6 +16,7 @@ python-dotenv = "^1.0.0"
 dependency-injector = "^4.42.0"
 matplotlib = "^3.8.0"
 pandas = "^2.2.0"
+flask = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"

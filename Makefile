@@ -21,3 +21,6 @@ clean:
 run:
 	poetry run python -m analytics_agent.interface.cli
 
+run-web:
+	poetry run python -m analytics_agent.interface.web
+
