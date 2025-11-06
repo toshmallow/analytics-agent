@@ -15,7 +15,7 @@ def main() -> None:
         print(f"Configuration error: {e}")
         print("\nPlease set up your .env file with required configuration:")
         print("  - GCP_PROJECT_ID")
-        print("  - OPENAI_API_KEY")
+        print("  - GEMINI_API_KEY")
         print("  - GOOGLE_APPLICATION_CREDENTIALS (optional)")
         sys.exit(1)
 
