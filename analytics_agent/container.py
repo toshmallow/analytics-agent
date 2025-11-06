@@ -7,6 +7,7 @@ from analytics_agent.clients.bigquery import BigQueryClient
 from analytics_agent.config import Config
 from analytics_agent.tools.bigquery import BigQueryTools
 from analytics_agent.tools.file_export import FileExportTools
+from analytics_agent.tools.ml_analysis import MLAnalysisTools
 from analytics_agent.tools.visualization import VisualizationTools
 
 
@@ -35,10 +36,16 @@ class Container(containers.DeclarativeContainer):
         default_output_dir="exports",
     )
 
+    ml_analysis_tools = providers.Factory(
+        MLAnalysisTools,
+        output_dir="ml_outputs",
+    )
+
     tools = providers.List(
         bigquery_tools,
         visualization_tools,
         file_export_tools,
+        ml_analysis_tools,
     )
 
     analytics_agent = providers.Factory(

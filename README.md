@@ -10,6 +10,8 @@ This project provides an intelligent agent that can:
 - 💾 Generate and execute SQL queries
 - 📊 Create data visualizations (charts and graphs)
 - 📁 Export data to files (CSV, JSON, TXT)
+- 🤖 Run machine learning analysis (regression, classification, clustering)
+- 📈 Perform time series forecasting
 - 🧠 Analyze data and provide insights
 - 💬 Answer analytical questions in natural language
 - 🌐 Interactive web interface with streaming responses
@@ -24,6 +26,8 @@ The agent is built using:
 - **Google Cloud BigQuery**: For data storage and querying
 - **Flask**: For the web interface
 - **Matplotlib & Pandas**: For data visualization and manipulation
+- **Scikit-learn**: For machine learning models and analysis
+- **Seaborn**: For statistical data visualization
 - **Poetry**: For dependency management
 - **dependency-injector**: For dependency injection and IoC
 
@@ -61,7 +65,8 @@ analytics-agent/
 │   │   ├── base.py            # Base tool class
 │   │   ├── bigquery.py        # BigQuery tools
 │   │   ├── visualization.py   # Data visualization tools
-│   │   └── file_export.py     # File export tools
+│   │   ├── file_export.py     # File export tools
+│   │   └── ml_analysis.py     # Machine learning tools
 │   └── interface/             # User interfaces
 │       ├── __init__.py
 │       ├── cli.py             # Command-line interface
@@ -72,6 +77,7 @@ analytics-agent/
 │       └── templates/         # HTML templates
 │           └── index.html
 ├── exports/                   # Output directory for files and charts
+├── ml_outputs/                # Output directory for ML analysis results
 ├── pyproject.toml
 ├── poetry.lock
 ├── Makefile
@@ -338,6 +344,57 @@ The analytics agent has access to the following tools:
 1. **export_data_to_file**: Save data to CSV, JSON, or TXT files
 2. **copy_file**: Copy files to different locations
 
+### Machine Learning Analysis Tools
+
+1. **profile_dataset**: Generate comprehensive statistical profile of a dataset
+
+   - Dataset shape, data types, missing values
+   - Descriptive statistics for numeric columns
+   - Value counts for categorical columns
+
+2. **feature_correlation**: Calculate and visualize correlation matrix
+
+   - Supports Pearson, Spearman, and Kendall methods
+   - Creates correlation heatmap
+   - Identifies highly correlated feature pairs
+
+3. **train_linear_regression**: Train regression models for continuous targets
+
+   - Automatic train/test split
+   - Performance metrics (R², RMSE, MAE)
+   - Feature coefficients and importance
+   - Visualization of predictions and residuals
+
+4. **train_logistic_regression**: Train classification models
+
+   - Binary and multi-class classification support
+   - Automatic feature scaling
+   - Classification report with precision, recall, F1-score
+   - Feature importance analysis
+
+5. **kmeans_cluster**: Perform clustering analysis
+
+   - Automatic feature scaling
+   - Silhouette score for cluster quality
+   - Cluster statistics and distribution
+   - Visualization of clusters and centroids
+
+6. **moving_average_forecast**: Time series forecasting
+   - Simple moving average method
+   - Configurable window size
+   - Performance metrics (MAE, RMSE)
+   - Visualization of historical data and forecast
+
+All ML visualizations are saved to the `ml_outputs/` directory by default.
+
+**Example ML queries to try:**
+
+- "Profile the dataset and show me the statistical summary"
+- "Calculate the correlation between features in this data"
+- "Train a linear regression model to predict sales based on these features"
+- "Perform k-means clustering with 3 clusters on this customer data"
+- "Create a moving average forecast for the next 5 periods"
+
 The agent uses these tools autonomously to:
 
 - Understand data structure
@@ -412,6 +469,7 @@ The DI container (`analytics_agent/container.py`) manages:
 - **BigQueryTools**: BigQuery tools with injected client
 - **VisualizationTools**: Visualization tools with output directory
 - **FileExportTools**: File export tools with output directory
+- **MLAnalysisTools**: Machine learning analysis tools with output directory
 - **AnalyticsAgent**: Main agent with all injected tools
 
 ### Dependency Graph
@@ -422,6 +480,7 @@ Config (Singleton)
   │     └─> BigQueryTools (Factory)
   ├─> VisualizationTools (Factory)
   ├─> FileExportTools (Factory)
+  ├─> MLAnalysisTools (Factory)
   └─> AnalyticsAgent (Factory)
         └─> All Tools
 ```
@@ -470,6 +529,7 @@ bigquery_client = container.bigquery_client()
 bigquery_tools = container.bigquery_tools()
 visualization_tools = container.visualization_tools()
 file_export_tools = container.file_export_tools()
+ml_analysis_tools = container.ml_analysis_tools()
 agent = container.analytics_agent()
 ```
 
@@ -554,12 +614,14 @@ Some ideas for extending the agent's capabilities:
 - ✅ Add more data visualization capabilities (IMPLEMENTED)
 - ✅ Add export functionality for reports (IMPLEMENTED)
 - ✅ Create web interface (IMPLEMENTED)
+- ✅ Machine learning analysis tools (IMPLEMENTED)
 - 🔜 Integrate with additional data sources (PostgreSQL, Snowflake, etc.)
 - 🔜 Add query optimization suggestions
 - 🔜 Implement data quality checks
 - 🔜 Create scheduled analysis workflows
 - 🔜 Add authentication and multi-user support to web interface
 - 🔜 Implement data caching for faster responses
+- 🔜 Advanced ML models (random forests, gradient boosting, neural networks)
 
 ### Extensibility
 
