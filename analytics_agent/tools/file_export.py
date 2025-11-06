@@ -134,6 +134,10 @@ class FileExportTools(BaseTool):
         try:
             output_path = Path(file_path)
             if not output_path.is_absolute():
+                # Strip 'exports' prefix if present to avoid nested directories
+                path_parts = output_path.parts
+                if len(path_parts) > 0 and path_parts[0] in ['exports', 'export']:
+                    output_path = Path(*path_parts[1:]) if len(path_parts) > 1 else Path(output_path.name)
                 output_path = self.default_output_dir / output_path
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -174,6 +178,10 @@ class FileExportTools(BaseTool):
 
             dest = Path(destination_path)
             if not dest.is_absolute():
+                # Strip 'exports' prefix if present to avoid nested directories
+                path_parts = dest.parts
+                if len(path_parts) > 0 and path_parts[0] in ['exports', 'export']:
+                    dest = Path(*path_parts[1:]) if len(path_parts) > 1 else Path(dest.name)
                 dest = self.default_output_dir / dest
 
             dest.parent.mkdir(parents=True, exist_ok=True)

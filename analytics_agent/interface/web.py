@@ -185,10 +185,26 @@ def chat() -> Response:
                                     yield f"data: {json.dumps({'type': 'tool_result', 'content': formatted_result})}\n\n"
 
                                 # Check if this is a visualization result and extract image path
-                                if tool_name == "create_visualization" and "Saved to:" in result_content:
+                                # ML tools that create visualizations: feature_correlation, kmeans_cluster,
+                                # moving_average_forecast, train_linear_regression
+                                ml_viz_tools = [
+                                    "create_visualization",
+                                    "feature_correlation",
+                                    "kmeans_cluster",
+                                    "moving_average_forecast",
+                                    "train_linear_regression"
+                                ]
+                                if tool_name in ml_viz_tools and "saved to:" in result_content.lower():
                                     # Extract file path from result
                                     try:
-                                        file_path = result_content.split("Saved to: ")[1].strip()
+                                        # Handle both "Saved to:" and "Visualization saved to:"
+                                        if "Visualization saved to:" in result_content:
+                                            file_path = result_content.split("Visualization saved to: ")[1].strip()
+                                        else:
+                                            file_path = result_content.split("Saved to: ")[1].strip()
+
+                                        # Remove any trailing newlines or additional text
+                                        file_path = file_path.split('\n')[0].strip()
                                         # Convert to relative path for web serving
                                         path_obj = Path(file_path)
 

@@ -170,6 +170,10 @@ class VisualizationTools(BaseTool):
             if output_path:
                 filepath = Path(output_path)
                 if not filepath.is_absolute():
+                    # Strip 'exports' prefix if present to avoid nested directories
+                    path_parts = filepath.parts
+                    if len(path_parts) > 0 and path_parts[0] in ['exports', 'export']:
+                        filepath = Path(*path_parts[1:]) if len(path_parts) > 1 else Path(filepath.name)
                     filepath = self.output_dir / filepath
                 filepath.parent.mkdir(parents=True, exist_ok=True)
             else:
