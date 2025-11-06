@@ -33,7 +33,7 @@ from analytics_agent.tools.base import BaseTool
 class MLAnalysisTools(BaseTool):
     """Machine Learning analysis tools for the analytics agent."""
 
-    def __init__(self, output_dir: str = "ml_outputs") -> None:
+    def __init__(self, output_dir: str = "exports") -> None:
         """Initialize ML analysis tools.
 
         Args:

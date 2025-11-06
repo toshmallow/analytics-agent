@@ -38,7 +38,7 @@ class Container(containers.DeclarativeContainer):
 
     ml_analysis_tools = providers.Factory(
         MLAnalysisTools,
-        output_dir="ml_outputs",
+        output_dir="exports",
     )
 
     tools = providers.List(

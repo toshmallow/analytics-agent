@@ -76,8 +76,7 @@ analytics-agent/
 │       │   └── script.js
 │       └── templates/         # HTML templates
 │           └── index.html
-├── exports/                   # Output directory for files and charts
-├── ml_outputs/                # Output directory for ML analysis results
+├── exports/                   # Output directory for files, charts, and ML results
 ├── pyproject.toml
 ├── poetry.lock
 ├── Makefile
@@ -385,7 +384,7 @@ The analytics agent has access to the following tools:
    - Performance metrics (MAE, RMSE)
    - Visualization of historical data and forecast
 
-All ML visualizations are saved to the `ml_outputs/` directory by default.
+All ML visualizations are saved to the `exports/` directory (same as other visualizations).
 
 **Example ML queries to try:**
 
