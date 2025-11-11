@@ -18,9 +18,9 @@ clean:
 	find . -type d -name .mypy_cache -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 
-run:
+run-cli:
 	poetry run python -m analytics_agent.interface.cli
 
-run-web:
+run:
 	poetry run python -m analytics_agent.interface.web
 
