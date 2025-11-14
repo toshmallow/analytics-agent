@@ -1,6 +1,7 @@
 """Tools for the analytics agent to interact with BigQuery."""
 
-from typing import Annotated, List
+import re
+from typing import Annotated, Dict, List
 
 import pandas as pd
 from langchain_core.tools import StructuredTool
@@ -19,6 +20,41 @@ class BigQueryTools(BaseTool):
             bigquery_client: BigQuery client instance
         """
         self.client = bigquery_client
+
+    def extract_working_context(self, tool_name: str, tool_args: dict) -> Dict[str, str]:
+        """Extract working context (dataset, table) from a tool call.
+
+        Args:
+            tool_name: Name of the tool being called
+            tool_args: Arguments passed to the tool
+
+        Returns:
+            Dict with 'dataset' and/or 'table' keys if context can be extracted
+        """
+        context = {}
+
+        # Extract from execute_bigquery_sql
+        if tool_name == "execute_bigquery_sql":
+            query = tool_args.get("query", "")
+            # Try to extract table reference like dataset.table or `dataset.table`
+            table_pattern = r'(?:FROM|JOIN)\s+`?([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_-]+)`?'
+            match = re.search(table_pattern, query, re.IGNORECASE)
+            if match:
+                context["dataset"] = match.group(1)
+                context["table"] = match.group(2)
+
+        # Extract from get_bigquery_table_schema
+        elif tool_name == "get_bigquery_table_schema":
+            if "dataset_id" in tool_args and "table_id" in tool_args:
+                context["dataset"] = tool_args["dataset_id"]
+                context["table"] = tool_args["table_id"]
+
+        # Extract from list_bigquery_tables
+        elif tool_name == "list_bigquery_tables":
+            if "dataset_id" in tool_args:
+                context["dataset"] = tool_args["dataset_id"]
+
+        return context
 
     @staticmethod
     def format_tool_call(tool_name: str, tool_args: dict) -> str:

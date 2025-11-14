@@ -1,6 +1,6 @@
 """LangGraph agent for BigQuery analytics."""
 
-from typing import Any, Generator, List, Literal, cast
+from typing import Any, Dict, Generator, List, Literal, cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
@@ -11,6 +11,45 @@ from analytics_agent.agent.llm_manager import LLMManager
 from analytics_agent.agent.state import AgentState
 from analytics_agent.config import Config
 from analytics_agent.tools.base import BaseTool
+
+
+def extract_working_context_from_messages(
+    messages: List, tools: List[BaseTool]
+) -> Dict[str, str]:
+    """Extract dataset and table information from recent messages.
+
+    Args:
+        messages: List of conversation messages
+        tools: List of tool instances that can extract context
+
+    Returns:
+        Dict with 'dataset' and 'table' keys if found
+    """
+    context = {}
+
+    # Look at recent messages in reverse order (most recent first)
+    for message in reversed(messages[-10:]):  # Check last 10 messages
+        # Check if message has tool calls
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            for tool_call in message.tool_calls:
+                # Handle both dict and object access patterns
+                if isinstance(tool_call, dict):
+                    tool_name = tool_call.get("name", "")
+                    args = tool_call.get("args", {})
+                else:
+                    tool_name = getattr(tool_call, "name", "")
+                    args = getattr(tool_call, "args", {})
+
+                # Ask each tool to extract context if it can
+                for tool in tools:
+                    extracted = tool.extract_working_context(tool_name, args)
+                    if extracted:
+                        context.update(extracted)
+                        # Return immediately if we found dataset and table
+                        if "dataset" in context and "table" in context:
+                            return context
+
+    return context
 
 
 def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledStateGraph:
@@ -40,8 +79,27 @@ def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledSta
         """Call the language model with the current state."""
         messages = state["messages"]
 
+        # Extract working context from recent messages
+        working_context = extract_working_context_from_messages(messages, tools)
+
+        # Merge with existing context, preferring newly extracted context
+        existing_context = state.get("working_context", {})
+        if existing_context:
+            # Keep existing context but override with new if found
+            working_context = {**existing_context, **working_context}
+
+        # Build context-aware system message
+        context_info = ""
+        if working_context:
+            dataset = working_context.get("dataset")
+            table = working_context.get("table")
+            if dataset and table:
+                context_info = f"\n\nCURRENT WORKING CONTEXT:\n- You are currently working with the table: `{dataset}.{table}`\n- When the user refers to 'this data', 'this table', or 'this dataset', they mean `{dataset}.{table}`\n- DO NOT ask which dataset or table to use if the context is clear from the conversation\n- DO NOT list datasets/tables again unless the user asks about different data or you need to explore a new data source\n"
+            elif dataset:
+                context_info = f"\n\nCURRENT WORKING CONTEXT:\n- You are currently working with the dataset: `{dataset}`\n- When the user refers to 'this data' or 'this dataset', they mean `{dataset}`\n- DO NOT ask which dataset to use if the context is clear from the conversation\n"
+
         system_message = SystemMessage(
-            content="""
+            content=f"""
             You are an expert data analyst with access to BigQuery, visualization, and file export tools.
             Your role is to help users analyze their data by:
             - Understanding their analytical questions
@@ -49,7 +107,7 @@ def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledSta
             - Writing and executing SQL queries
             - Creating visualizations when explicitly requested
             - Exporting data and files to the local file system
-            - Interpreting results and providing insights
+            - Interpreting results and providing insights{context_info}
 
             OUTPUT FORMATTING GUIDELINES:
             - ALWAYS format your responses using MARKDOWN syntax for better readability
@@ -78,6 +136,14 @@ def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledSta
             - Instead, provide summaries, key findings, and insights
             - Focus on answering the user's question with clear explanations
             - Use concise language and highlight important patterns or trends
+
+            CONTEXT AWARENESS:
+            - Pay close attention to the conversation history and what data sources you've already explored
+            - If you've already used a specific dataset or table in recent messages, remember it
+            - When the user says "this data", "this table", "this ecommerce data", etc., they are referring to the data you most recently worked with
+            - DO NOT ask the user to specify which dataset/table unless you genuinely need clarification
+            - DO NOT re-list datasets or tables if you've already done so in the current conversation
+            - Only explore new datasets/tables if the user asks about different data or if the context clearly requires it
 
             VISUALIZATION GUIDELINES:
             - ONLY create visualizations when the user explicitly requests them
@@ -126,6 +192,7 @@ def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledSta
         return {
             "messages": [response],
             "analysis_context": response.content if response.content else "",
+            "working_context": working_context,
         }
 
     workflow = StateGraph(AgentState)
@@ -162,7 +229,7 @@ class AnalyticsAgent:
         self.tools = tools
         self.config = config
         self.graph = create_analytics_agent(tools, config)
-        self.conversation_state: AgentState = {"messages": []}
+        self.conversation_state: AgentState = {"messages": [], "working_context": {}}
 
     def analyze(self, question: str) -> Generator[dict[str, Any], None, None]:
         """Analyze data with streaming to show reasoning process.
@@ -187,4 +254,4 @@ class AnalyticsAgent:
 
     def reset_conversation(self) -> None:
         """Reset the conversation history."""
-        self.conversation_state = {"messages": []}
+        self.conversation_state = {"messages": [], "working_context": {}}

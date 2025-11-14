@@ -1,7 +1,7 @@
 """Base class for analytics agent tools."""
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Dict, List
 
 from langchain_core.tools import StructuredTool
 
@@ -50,3 +50,15 @@ class BaseTool(ABC):
             List of tool names
         """
         return [tool.name for tool in self.get_tools()]
+
+    def extract_working_context(self, tool_name: str, tool_args: dict) -> Dict[str, str]:
+        """Extract working context (dataset, table) from a tool call.
+
+        Args:
+            tool_name: Name of the tool being called
+            tool_args: Arguments passed to the tool
+
+        Returns:
+            Dict with 'dataset' and/or 'table' keys if context can be extracted
+        """
+        return {}

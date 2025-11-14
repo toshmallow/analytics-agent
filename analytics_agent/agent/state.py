@@ -1,6 +1,6 @@
 """State definitions for the LangGraph agent."""
 
-from typing import Annotated, List, Optional
+from typing import Annotated, Dict, List, Optional
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
@@ -12,3 +12,4 @@ class AgentState(TypedDict, total=False):
 
     messages: Annotated[List[BaseMessage], add_messages]
     analysis_context: Optional[str]
+    working_context: Optional[Dict[str, str]]  # Tracks current dataset/table being worked with
