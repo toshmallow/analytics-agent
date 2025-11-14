@@ -1,8 +1,20 @@
 """CLI interface for the analytics agent."""
 
+import logging
 import sys
 
 from analytics_agent.container import container
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:

@@ -1,6 +1,7 @@
 """Web interface for the analytics agent."""
 
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -10,6 +11,17 @@ from flask import Flask, Response, jsonify, render_template, request, send_from_
 
 from analytics_agent.agent.core import AnalyticsAgent
 from analytics_agent.container import container
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 # Get the directory where this file is located
 interface_dir = Path(__file__).parent
@@ -271,8 +283,11 @@ def main() -> None:
 
     app_instance = create_app()
     port = int(os.getenv("PORT", "8080"))
+    print("=" * 80)
     print("Starting Analytics Agent web server...")
     print(f"Open your browser and navigate to http://localhost:{port}")
+    print("LLM token usage logs will be displayed in this terminal")
+    print("=" * 80)
     app_instance.run(host="0.0.0.0", port=port, debug=False)
 
 
