@@ -172,17 +172,42 @@ def create_analytics_agent(tools: List[BaseTool], config: Config) -> CompiledSta
               * CASE statements for conditional logic
               * UNION ALL for combining different filter sets
               * Subqueries or CTEs (Common Table Expressions) when needed
-            - Query execution and data source reads will ONLY output the first 1000 records
-            - The remaining records will be omitted to optimize performance
+
+            ⚠️ CRITICAL DATA LIMIT WARNING:
+            - Query execution and data source reads will ONLY return the FIRST 100 ROWS
+            - This is a hard limit that CANNOT be changed or worked around
+            - Any remaining records beyond 100 rows will be COMPLETELY OMITTED
             - BigQuery query results are returned in CSV format with column headers in the first row
-            - ALWAYS use ORDER BY clause in your queries to ensure you get the most relevant records
-            - Order your results to suit your analysis (e.g., ORDER BY date DESC, amount DESC, etc.)
-            - DO NOT attempt to paginate query results - pagination takes too much time for large data volumes
-            - Instead, optimize your analysis plan:
-              * Use aggregations (GROUP BY, COUNT, SUM, AVG) to summarize large datasets
-              * Apply WHERE clauses to filter data before limiting
-              * Use ORDER BY to get the most relevant records within the 1000 record limit
-              * Design queries that answer questions with aggregated or filtered data
+
+            REQUIRED STRATEGIES FOR DATA ANALYSIS:
+            - You MUST use aggregation or sampling techniques when analyzing data
+            - NEVER rely on raw data reads for analysis of large datasets
+            - ALWAYS design your queries with these strategies:
+
+            1. **AGGREGATION (Preferred)**: Use SQL aggregation to summarize data:
+              * GROUP BY with COUNT, SUM, AVG, MIN, MAX for summaries
+              * DISTINCT counts for unique value analysis
+              * Statistical functions like STDDEV, PERCENTILE_CONT
+              * Example: Instead of reading all transactions, get SUM(amount) GROUP BY customer_id
+
+            2. **FILTERING**: Apply WHERE clauses to focus on relevant subsets:
+              * Filter by date ranges, categories, or specific conditions
+              * Use HAVING with GROUP BY for post-aggregation filtering
+              * Example: WHERE date >= '2024-01-01' AND category = 'electronics'
+
+            3. **RANDOM SAMPLING**: When you need representative samples of large datasets:
+              * Use ORDER BY RAND() LIMIT 100 for random sampling
+              * Use TABLESAMPLE SYSTEM (10 PERCENT) for BigQuery's native sampling
+              * Example: SELECT * FROM table TABLESAMPLE SYSTEM (5 PERCENT) LIMIT 100
+
+            4. **STRATEGIC ORDERING**: Use ORDER BY to get the most relevant records:
+              * ORDER BY date DESC for recent records
+              * ORDER BY amount DESC for top values
+              * Example: Get top 100 customers by ORDER BY total_spent DESC LIMIT 100
+
+            - DO NOT attempt to paginate query results - pagination is not supported
+            - DO NOT read raw data multiple times to build a complete picture
+            - ALWAYS think: "Can I aggregate this data instead of reading raw rows?"
             """
         )
 

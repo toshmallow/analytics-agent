@@ -152,7 +152,7 @@ class BigQueryTools(BaseTool):
         total_rows = len(df_full)
 
         # Limit rows for LLM context
-        max_rows_to_llm = 1000
+        max_rows_to_llm = 100
         truncated = total_rows > max_rows_to_llm
 
         if truncated:
@@ -221,7 +221,8 @@ class BigQueryTools(BaseTool):
                 name="execute_bigquery_sql",
                 description=(
                     "Execute a SQL query against BigQuery and return the results as CSV format. "
-                    "Results are automatically truncated to 1000 rows if the query returns more rows. "
+                    "⚠️ CRITICAL: Results are automatically truncated to ONLY 100 rows. "
+                    "Use aggregation (GROUP BY, SUM, AVG, COUNT) or sampling (ORDER BY RAND()) to analyze large datasets. "
                     "The CSV format includes column headers in the first row."
                 ),
             ),
